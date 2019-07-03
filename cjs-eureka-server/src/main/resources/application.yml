@@ -1,0 +1,14 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: cjs-eureka-server
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://10.0.29.92:8761/eureka/,http://10.0.29.232:8761/eureka/
+
+logging:
+  file: ${spring.application.name}.log
