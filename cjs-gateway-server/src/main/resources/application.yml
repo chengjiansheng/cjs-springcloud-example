@@ -1,0 +1,33 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+spring:
+  application:
+    name: cjs-gateway-server
+  redis:
+    host: 10.0.29.187
+    password: 123456
+    port: 6379
+  cloud:
+    gateway:
+      routes:
+        - id: header_route
+          uri: http://10.0.29.187:8080/
+          predicates:
+            - Header=X-Request-Id, \d+
+#        - id: path_route
+#          uri: http://10.0.29.187:8080/
+#          predicates:
+#            - Path=/foo/{segment},/bar/{segment}
+        - id: query_route
+          uri: http://10.0.29.187:8080/
+          predicates:
+            - Query=baz
+#      default-filters:
+#        - AddResponseHeader=X-Response-Foo, Bar
+#        - AddRequestParameter=hello, world
+
+logging:
+  file: ${spring.application.name}.log
+
