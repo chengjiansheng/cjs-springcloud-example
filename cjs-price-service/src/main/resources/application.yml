@@ -1,0 +1,19 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /price
+spring:
+  application:
+    name: cjs-price-service
+eureka:
+  client:
+    service-url:
+      defaultZone: http://10.0.29.92:8761/eureka/,http://10.0.29.232:8761/eureka/
+    healthcheck:
+      enabled: true
+  instance:
+    lease-expiration-duration-in-seconds: 60
+    lease-renewal-interval-in-seconds: 30
+
+logging:
+  file: ${spring.application.name}.log
