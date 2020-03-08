@@ -7,15 +7,14 @@ import com.cjs.example.domain.RefreshRequest;
 import com.cjs.example.enums.ResponseCodeEnum;
 import com.cjs.example.utils.JWTUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -47,23 +46,32 @@ public class LoginController {
 
         String username = request.getUsername();
         String password = request.getPassword();
+        //  假设查询到用户ID是1001
+        String userId = "1001";
         if ("hello".equals(username) && "world".equals(password)) {
             //  生成Token
-            String token = JWTUtil.generateToken(username, secretKey);
+            String token = JWTUtil.generateToken(userId, secretKey);
 
-            //  生成刷新Toke
+            //  生成刷新Token
             String refreshToken = UUID.randomUUID().toString().replace("-", "");
 
             //  放入缓存
             HashOperations<String, String, String> hashOperations = stringRedisTemplate.opsForHash();
-            hashOperations.put(refreshToken, "token", token);
-            hashOperations.put(refreshToken, "user", username);
-            stringRedisTemplate.expire(refreshToken, JWTUtil.TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+//            hashOperations.put(refreshToken, "token", token);
+//            hashOperations.put(refreshToken, "user", username);
+//            stringRedisTemplate.expire(refreshToken, JWTUtil.TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+
+//            String key = MD5Encoder.encode(userId.getBytes());
+
+            String key = userId;
+            hashOperations.put(key, "token", token);
+            hashOperations.put(key, "refreshToken", refreshToken);
+            stringRedisTemplate.expire(key, JWTUtil.TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
 
             LoginResponse loginResponse = new LoginResponse();
             loginResponse.setToken(token);
             loginResponse.setRefreshToken(refreshToken);
-            loginResponse.setUsername(username);
+            loginResponse.setUsername(userId);
 
             return ResponseResult.success(loginResponse);
         }
@@ -74,8 +82,12 @@ public class LoginController {
     /**
      * 退出
      */
-    public void logout() {
-
+    @GetMapping("/logout")
+    public ResponseResult logout(@RequestParam("userId") String userId) {
+        HashOperations<String, String, String> hashOperations = stringRedisTemplate.opsForHash();
+        String key = userId;
+        hashOperations.delete(key);
+        return ResponseResult.success();
     }
 
     /**
@@ -83,17 +95,19 @@ public class LoginController {
      */
     @PostMapping("/refreshToken")
     public ResponseResult refreshToken(@RequestBody @Validated RefreshRequest request, BindingResult bindingResult) {
+        String userId = request.getUserId();
         String refreshToken = request.getRefreshToken();
         HashOperations<String, String, String> hashOperations = stringRedisTemplate.opsForHash();
-        String username = hashOperations.get(refreshToken, "user");
-        if (StringUtils.isBlank(username)) {
+        String key = userId;
+        String originalRefreshToken = hashOperations.get(key, "refreshToken");
+        if (StringUtils.isBlank(originalRefreshToken) || !originalRefreshToken.equals(refreshToken)) {
             return ResponseResult.error(ResponseCodeEnum.REFRESH_TOKEN_INVALID.getCode(), ResponseCodeEnum.REFRESH_TOKEN_INVALID.getMessage());
         }
 
         //  生成新token
-        String newToken = JWTUtil.generateToken(username, secretKey);
-        hashOperations.put(refreshToken, "token", newToken);
-        stringRedisTemplate.expire(refreshToken, JWTUtil.TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+        String newToken = JWTUtil.generateToken(userId, secretKey);
+        hashOperations.put(key, "token", newToken);
+        stringRedisTemplate.expire(userId, JWTUtil.TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
 
         return ResponseResult.success(newToken);
     }
