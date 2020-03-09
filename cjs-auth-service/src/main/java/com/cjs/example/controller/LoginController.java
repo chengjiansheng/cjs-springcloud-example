@@ -61,6 +61,12 @@ public class LoginController {
 //            hashOperations.put(refreshToken, "user", username);
 //            stringRedisTemplate.expire(refreshToken, JWTUtil.TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
 
+            /**
+             * 如果可以允许用户退出后token如果在有效期内仍然可以使用的话，那么就不需要存Redis
+             * 因为，token要跟用户做关联的话，就必须得每次都带一个用户标识，
+             * 那么校验token实际上就变成了校验token和用户标识的关联关系是否正确，且token是否有效
+             */
+
 //            String key = MD5Encoder.encode(userId.getBytes());
 
             String key = userId;
