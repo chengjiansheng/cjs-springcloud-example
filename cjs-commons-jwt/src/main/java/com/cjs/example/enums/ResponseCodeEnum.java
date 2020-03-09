@@ -14,7 +14,8 @@ public enum ResponseCodeEnum {
     TOKEN_INVALID(2002, "无效的Token"),
     TOKEN_SIGNATURE_INVALID(2003, "无效的签名"),
     TOKEN_EXPIRED(2004, "token已过期"),
-    REFRESH_TOKEN_INVALID(2005, "刷新Token无效");
+    TOKEN_MISSION(2005, "token缺失"),
+    REFRESH_TOKEN_INVALID(2006, "刷新Token无效");
 
 
     private int code;
